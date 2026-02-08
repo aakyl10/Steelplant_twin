@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.log
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+
+# Data
+docker/influxdb/
+docker/grafana/
+docker/mosquitto/data/
+docker/mosquitto/log/
+data/
