@@ -1,4 +1,4 @@
-# Steel Plant Digital Twin (Simulation-Based IIoT) — Assignment 4 Evidence Starter
+# Steel Plant Digital Twin (Simulation-Based IIoT) - Assignment 4 Evidence Starter
 
 This repository provides a **minimal working implementation start** for a simulation-based IIoT digital twin:
 **simulator → MQTT → ingestion → InfluxDB → KPI computation (kWh/ton)**.
@@ -63,7 +63,7 @@ python analytics/kpi_kwh_per_ton.py
 The script prints KPI values and saves a plot:
 - `docs/kpi_kwh_per_ton.png`
 
-## 3) Evidence screenshots checklist (for Assignment 4)
+## 3) Evidence screenshots checklist 
 
 See `docs/EVIDENCE.md` for **exact screenshot targets** and captions aligned with the report placeholders.
 
