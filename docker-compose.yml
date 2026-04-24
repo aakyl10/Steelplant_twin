@@ -1,0 +1,41 @@
+services:
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: steelplant-mqtt
+    command: ["mosquitto", "-c", "/mosquitto-no-auth.conf"]
+    ports:
+      - "1883:1883"
+
+  influxdb:
+    image: influxdb:2
+    container_name: steelplant-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USERNAME}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN}
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: steelplant-grafana
+    ports:
+      - "127.0.0.1:33000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - influxdb
+
+volumes:
+  influxdb_data:
+  influxdb_config:
+  grafana_data:

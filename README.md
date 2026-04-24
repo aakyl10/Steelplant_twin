@@ -1,0 +1,121 @@
+# Steelplant Twin
+
+Simulation-based IoT/IIoT virtual compressed-air plant for energy efficiency
+analysis. The IoT pipeline is:
+
+```text
+virtual sensors -> MQTT -> InfluxDB -> Grafana/export to ML
+```
+
+## IoT Pipeline Run Guide
+
+### 1. Install Python dependencies
+
+```powershell
+pip install -r requirements.txt
+```
+
+### 2. Configure environment variables
+
+Create a local `.env` file from `.env.example` and set real local passwords and
+the InfluxDB token:
+
+```text
+MQTT_HOST=localhost
+MQTT_PORT=1883
+MQTT_TOPIC=steelplant/compressed_air/telemetry
+
+INFLUXDB_URL=http://localhost:8086
+INFLUXDB_USERNAME=admin
+INFLUXDB_PASSWORD=replace_with_your_password
+INFLUXDB_ORG=steelplant
+INFLUXDB_BUCKET=telemetry
+INFLUXDB_TOKEN=replace_with_your_token
+
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=replace_with_your_password
+```
+
+Do not commit `.env`.
+
+### 3. Start MQTT broker, InfluxDB, and Grafana
+
+Start the Docker services:
+
+```powershell
+docker compose up -d
+```
+
+Services:
+
+- `mqtt` exposes MQTT on port `1883`.
+- `influxdb` exposes InfluxDB on port `8086`.
+- `grafana` exposes Grafana at `http://localhost:33000`.
+
+InfluxDB and Grafana use persistent Docker volumes defined in
+`docker-compose.yml`.
+
+### 4. Run MQTT-to-Influx subscriber
+
+Start the subscriber first and keep it running:
+
+```powershell
+python -m ingestion.mqtt_to_influx
+```
+
+It subscribes to:
+
+```text
+steelplant/compressed_air/telemetry
+```
+
+It writes points to InfluxDB measurement:
+
+```text
+compressed_air_telemetry
+```
+
+### 5. Run telemetry publisher
+
+In another terminal, publish generated telemetry:
+
+```powershell
+python -m simulator.publisher
+```
+
+The publisher uses rows from `simulator.generator`, sends JSON MQTT payloads,
+and publishes only the required telemetry fields from `docs/02_data_contract.md`.
+The simulation metadata field `inefficient_scenario` is used only inside the
+generator/tests. It is not published to MQTT and is not written to InfluxDB.
+
+### 6. Verify data in InfluxDB
+
+Open the InfluxDB UI:
+
+```text
+http://localhost:8086
+```
+
+The generator uses timestamps from `2026-04-01T00:00:00Z` through
+`2026-04-30T23:55:00Z`. Use this Flux query in Data Explorer:
+
+```flux
+from(bucket: "telemetry")
+  |> range(start: 2026-04-01T00:00:00Z, stop: 2026-05-01T00:00:00Z)
+  |> filter(fn: (r) => r._measurement == "compressed_air_telemetry")
+  |> limit(n: 20)
+```
+
+To verify SEC values:
+
+```flux
+from(bucket: "telemetry")
+  |> range(start: 2026-04-01T00:00:00Z, stop: 2026-05-01T00:00:00Z)
+  |> filter(fn: (r) => r._measurement == "compressed_air_telemetry")
+  |> filter(fn: (r) => r._field == "SEC")
+  |> limit(n: 20)
+```
+
+Expected result: records are present with timestamps from the payload and fields
+such as `ambient_temperature`, `compressed_air_demand`, `pressure_setpoint`,
+compressor states, `total_airflow`, `pressure_deviation`, and `SEC`.
