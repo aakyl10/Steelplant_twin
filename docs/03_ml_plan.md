@@ -2,7 +2,8 @@
 
 ## Goal
 
-Build a proof-of-concept supervised regression model to predict SEC.
+Build a conservative proof-of-concept supervised regression pipeline to predict
+SEC from simulated compressed-air telemetry.
 
 ## Task type
 
@@ -10,37 +11,61 @@ Supervised regression.
 
 ## Target
 
-SEC
+- `SEC`
 
-## Forbidden feature
-
-Do not use total_power_consumption as a feature.
+SEC is a simulation proxy for Specific Energy Consumption. It is useful for
+comparing operating conditions in this virtual plant, but it is not a physically
+validated compressor energy model.
 
 ## Features
 
-Use the required ML feature list defined in `docs/02_data_contract.md`.
+The model uses the exact project telemetry column names:
+
+- `ambient_temperature`
+- `compressed_air_demand`
+- `pressure_setpoint`
+- `compressor_1_state`
+- `compressor_2_state`
+- `compressor_2_load_level`
+- `active_compressors_count`
+- `total_airflow`
+- `pressure_deviation`
+
+`timestamp` is kept only as metadata in the output dataset and predictions.
+
+## Excluded leakage features
+
+The model must not use:
+
+- `SEC` as an input feature
+- `timestamp` as a numeric feature
+- `total_power_consumption`
+- `energy_consumption`
+- any other direct power or energy total that could reconstruct SEC
 
 ## Dataset
 
+The ML dataset is generated from the existing 30-day simulator output:
+
 - 8640 rows
-- no missing values
-- no contradictory compressor values
-- final CSV/DataFrame
+- 5-minute interval
+- no missing values in selected features or target
+- no contradictory compressor states
+- saved to `data/processed/ml_dataset.csv`
 
-## Split
+## Split method
 
-- chronological split
-- 80% train
-- 20% test
+Chronological split:
+
+- first 80% rows for training
+- last 20% rows for testing
 - no separate validation split
 
-## Baseline model
+## Models
 
-Linear Regression
-
-## Main model
-
-Random Forest Regressor
+- Linear Regression as the baseline model
+- RandomForestRegressor as the main model
+- `random_state=42` for Random Forest
 
 ## Metrics
 
@@ -48,13 +73,21 @@ Random Forest Regressor
 - RMSE
 - R2
 
-## Plots
+Metrics are saved to `docs/ml/metrics.csv`.
 
-- Actual vs Predicted SEC
-- Feature Importance
+## Outputs
 
-## Interpretation questions
+- `data/processed/ml_dataset.csv`
+- `docs/ml/metrics.csv`
+- `docs/ml/predictions.csv`
+- `docs/ml/actual_vs_predicted_sec.png`
+- `docs/ml/feature_importance.png`
 
-- Does higher pressure setpoint increase SEC?
-- Does the model reflect the inefficient scenario?
-- Is Random Forest better than Linear Regression?
+## Short interpretation
+
+Linear Regression is used as a simple baseline. Random Forest is expected to
+fit the non-linear rule-based SEC pattern better because the simulator contains
+threshold behavior from compressor 2 activation and an inefficient operating
+period. High model performance should be interpreted carefully because both the
+features and target come from a deterministic simulation rather than measured
+industrial data.

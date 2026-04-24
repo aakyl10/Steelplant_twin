@@ -17,7 +17,7 @@ ML workflow, but it is not a physically validated compressor energy model.
 
 ### 1. Install Python dependencies
 
-```powershell
+```cmd
 pip install -r requirements.txt
 ```
 
@@ -48,7 +48,7 @@ Do not commit `.env`.
 
 Start the Docker services:
 
-```powershell
+```cmd
 docker compose up -d
 ```
 
@@ -65,7 +65,7 @@ InfluxDB and Grafana use persistent Docker volumes defined in
 
 Start the subscriber first and keep it running:
 
-```powershell
+```cmd
 python -m ingestion.mqtt_to_influx
 ```
 
@@ -85,7 +85,7 @@ compressed_air_telemetry
 
 In another terminal, publish generated telemetry:
 
-```powershell
+```cmd
 python -m simulator.publisher
 ```
 
@@ -151,3 +151,38 @@ Evidence screenshots are stored in `docs/screenshots/`:
 - `03_publisher_8640_messages.png`
 - `04_grafana_dashboard.png`
 - `05_sec_panel_query.png`
+
+## ML SEC Regression Pipeline
+
+The ML pipeline is a conservative supervised regression proof of concept for
+predicting `SEC` from the telemetry fields defined in `docs/02_data_contract.md`.
+It generates the standard 8640-row dataset from the existing simulator, keeps
+`timestamp` only as metadata, and excludes leakage features such as `SEC`,
+`total_power_consumption`, and `energy_consumption` from the model inputs.
+
+Run the pipeline from Windows CMD:
+
+```cmd
+python -m ml.train_sec_regression
+```
+
+Generated outputs:
+
+- `data/processed/ml_dataset.csv`
+- `docs/ml/metrics.csv`
+- `docs/ml/predictions.csv`
+- `docs/ml/actual_vs_predicted_sec.png`
+- `docs/ml/feature_importance.png`
+
+Verification commands:
+
+```cmd
+python -m pytest
+python -m simulator.generator
+python -m ml.train_sec_regression
+python -m ruff check .
+```
+
+The baseline model is Linear Regression. The main model is
+RandomForestRegressor with `random_state=42`. Metrics are MAE, RMSE, and R2
+using a chronological 80/20 train/test split.

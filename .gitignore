@@ -9,6 +9,7 @@ venv/
 
 # Data
 data/processed/*.csv
+!data/processed/ml_dataset.csv
 data/processed/*.parquet
 
 # Reports
