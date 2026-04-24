@@ -7,4 +7,3 @@ influxdb-client
 python-dotenv
 pytest
 ruff
-joblib

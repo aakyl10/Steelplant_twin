@@ -88,6 +88,8 @@ Metrics are saved to `docs/ml/metrics.csv`.
 Linear Regression is used as a simple baseline. Random Forest is expected to
 fit the non-linear rule-based SEC pattern better because the simulator contains
 threshold behavior from compressor 2 activation and an inefficient operating
-period. High model performance should be interpreted carefully because both the
-features and target come from a deterministic simulation rather than measured
-industrial data.
+period. The near-perfect Random Forest score is caused by deterministic
+synthetic data and should not be overclaimed as real industrial validation.
+High model performance should be interpreted carefully because both the features
+and target come from a deterministic simulation rather than measured industrial
+data.
