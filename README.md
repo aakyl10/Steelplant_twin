@@ -135,6 +135,8 @@ http://localhost:33000
 ```
 
 Use the credentials from `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD`.
+Grafana datasource and dashboard setup is manual in this proof of concept:
+connect Grafana to InfluxDB, then create panels for the fields below.
 The expected dashboard panels are:
 
 - `SEC`
