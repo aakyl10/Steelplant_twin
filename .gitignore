@@ -1,11 +1,29 @@
+# Python
 __pycache__/
 *.pyc
 .venv/
 venv/
+
+# Environment
 .env
-.idea/
-.vscode/
+
+# Data
 data/processed/*.csv
+data/processed/*.parquet
+
+# Reports
 reports/*.png
 reports/*.json
 reports/*.joblib
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker / local volumes
+influxdb_data/
+grafana_data/
