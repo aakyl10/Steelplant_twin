@@ -10,23 +10,13 @@ virtual sensors -> MQTT -> InfluxDB -> Grafana -> export to ML
 
 ## Telemetry variables
 
-- timestamp
-- ambient_temperature
-- compressed_air_demand
-- pressure_setpoint
-- compressor_1_state
-- compressor_2_state
-- compressor_2_load_level
-- active_compressors_count
-- total_airflow
-- pressure_deviation
-- SEC
+The authoritative telemetry schema is defined in `docs/02_data_contract.md`.
 
 ## Rule-based logic
 
 - Compressor 1 works as the base compressor.
 - Compressor 2 turns on when demand increases.
-- Compressor 2 works in the 40–100% load range.
+- Compressor 2 works in the 40-100% load range.
 - SEC is calculated at every simulation step.
 
 ## Data generation
@@ -65,30 +55,25 @@ Example JSON payload:
 
 ## InfluxDB storage
 
-Suggested measurement:
+Bucket:
+
+```text
+telemetry
+```
+
+Measurement:
 
 ```text
 compressed_air_telemetry
 ```
 
-Timestamp:
+Timestamp field:
 
 ```text
 timestamp
 ```
 
-Stored fields:
-
-- ambient_temperature
-- compressed_air_demand
-- pressure_setpoint
-- compressor_1_state
-- compressor_2_state
-- compressor_2_load_level
-- active_compressors_count
-- total_airflow
-- pressure_deviation
-- SEC
+Stored fields must follow `docs/02_data_contract.md`.
 
 ## Grafana dashboard panels
 

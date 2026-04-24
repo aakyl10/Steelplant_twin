@@ -18,15 +18,7 @@ Do not use total_power_consumption as a feature.
 
 ## Features
 
-- ambient_temperature
-- compressed_air_demand
-- pressure_setpoint
-- compressor_1_state
-- compressor_2_state
-- compressor_2_load_level
-- active_compressors_count
-- total_airflow
-- pressure_deviation
+Use the required ML feature list defined in `docs/02_data_contract.md`.
 
 ## Dataset
 

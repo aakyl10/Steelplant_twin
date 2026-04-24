@@ -7,6 +7,12 @@ analysis. The IoT pipeline is:
 virtual sensors -> MQTT -> InfluxDB -> Grafana/export to ML
 ```
 
+The authoritative telemetry schema is defined in `docs/02_data_contract.md`.
+
+Academic note: SEC in this project is a simulation proxy for Specific Energy
+Consumption. It is useful for demonstrating IoT data flow, visualization, and
+ML workflow, but it is not a physically validated compressor energy model.
+
 ## IoT Pipeline Run Guide
 
 ### 1. Install Python dependencies
@@ -119,3 +125,29 @@ from(bucket: "telemetry")
 Expected result: records are present with timestamps from the payload and fields
 such as `ambient_temperature`, `compressed_air_demand`, `pressure_setpoint`,
 compressor states, `total_airflow`, `pressure_deviation`, and `SEC`.
+
+### 7. Open Grafana and review dashboard evidence
+
+Open Grafana:
+
+```text
+http://localhost:33000
+```
+
+Use the credentials from `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD`.
+The expected dashboard panels are:
+
+- `SEC`
+- `compressed_air_demand`
+- `total_airflow`
+- `pressure_deviation`
+- `active_compressors_count`
+- `compressor_2_load_level`
+
+Evidence screenshots are stored in `docs/screenshots/`:
+
+- `01_docker_compose_ps.png`
+- `02_ingestion_subscribed.png`
+- `03_publisher_8640_messages.png`
+- `04_grafana_dashboard.png`
+- `05_sec_panel_query.png`

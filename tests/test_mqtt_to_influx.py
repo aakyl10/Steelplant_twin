@@ -7,6 +7,8 @@ from influxdb_client import Point
 from ingestion.mqtt_to_influx import (
     MEASUREMENT_NAME,
     NUMERIC_TELEMETRY_FIELDS,
+    build_on_message,
+    handle_message_payload,
     parse_payload,
     parse_timestamp,
     payload_to_point,
@@ -21,6 +23,11 @@ class FakeWriteApi:
 
     def write(self, bucket, org, record):
         self.calls.append({"bucket": bucket, "org": org, "record": record})
+
+
+class FakeMqttMessage:
+    def __init__(self, payload):
+        self.payload = payload
 
 
 def valid_payload():
@@ -88,3 +95,28 @@ def test_simulation_only_fields_are_not_required_or_stored():
 
     assert set(REQUIRED_TELEMETRY_FIELDS).issubset(payload)
     assert "inefficient_scenario" not in point._fields
+
+
+def test_invalid_message_payload_is_rejected_without_write():
+    write_api = FakeWriteApi()
+
+    point = handle_message_payload(
+        b"{not-json",
+        write_api=write_api,
+        bucket="telemetry",
+        org="steelplant",
+    )
+
+    assert point is None
+    assert write_api.calls == []
+
+
+def test_on_message_callback_does_not_raise_for_missing_fields():
+    write_api = FakeWriteApi()
+    payload = valid_payload()
+    del payload["SEC"]
+    callback = build_on_message(write_api=write_api, bucket="telemetry", org="steelplant")
+
+    callback(None, None, FakeMqttMessage(json.dumps(payload).encode("utf-8")))
+
+    assert write_api.calls == []

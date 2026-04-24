@@ -81,11 +81,35 @@ def write_payload_to_influx(
     return point
 
 
+def handle_message_payload(
+    payload: str | bytes,
+    write_api: Any,
+    bucket: str,
+    org: str,
+) -> Point | None:
+    """Write one MQTT payload, rejecting malformed telemetry without stopping."""
+    try:
+        return write_payload_to_influx(
+            payload,
+            write_api=write_api,
+            bucket=bucket,
+            org=org,
+        )
+    except (json.JSONDecodeError, UnicodeDecodeError, ValueError) as exc:
+        print(f"Rejected invalid MQTT payload: {exc}")
+        return None
+
+
 def build_on_message(write_api: Any, bucket: str, org: str):
     """Create an MQTT message callback that writes payloads to InfluxDB."""
 
     def on_message(_client: Any, _userdata: Any, message: Any) -> None:
-        write_payload_to_influx(message.payload, write_api=write_api, bucket=bucket, org=org)
+        handle_message_payload(
+            message.payload,
+            write_api=write_api,
+            bucket=bucket,
+            org=org,
+        )
 
     return on_message
 

@@ -2,7 +2,8 @@
 
 ## Purpose
 
-This document defines the required telemetry structure for the virtual compressed-air plant.
+This document is the source of truth for telemetry identifiers, fields, data
+types, and validation rules in the virtual compressed-air plant.
 
 The same data contract must be used by:
 
@@ -13,6 +14,20 @@ The same data contract must be used by:
 - ML training pipeline
 
 The goal is to keep the IoT and ML parts consistent.
+
+---
+
+## Transport and storage identifiers
+
+| Item | Value |
+|---|---|
+| MQTT topic | `steelplant/compressed_air/telemetry` |
+| InfluxDB organization | `steelplant` |
+| InfluxDB bucket | `telemetry` |
+| InfluxDB measurement | `compressed_air_telemetry` |
+| Timestamp source | `timestamp` payload field |
+
+The default environment variables are documented in `.env.example`.
 
 ---
 
@@ -34,19 +49,26 @@ Reason:
 
 ## Required telemetry fields
 
-| Field | Type | Unit | ML role | Description |
-|---|---|---|---|---|
-| timestamp | datetime/string | ISO 8601 | index | Measurement time |
-| ambient_temperature | float | C | feature | Simulated ambient temperature |
-| compressed_air_demand | float | m3/min | feature | Demand for compressed air |
-| pressure_setpoint | float | bar | feature | Required pressure level |
-| compressor_1_state | int | 0/1 | feature | Base compressor state |
-| compressor_2_state | int | 0/1 | feature | Secondary compressor state |
-| compressor_2_load_level | float | percent | feature | Load level of compressor 2 |
-| active_compressors_count | int | count | feature | Number of active compressors |
-| total_airflow | float | m3/min | feature | Produced airflow |
-| pressure_deviation | float | bar | feature | Difference between target and actual pressure |
-| SEC | float | kWh/m3 or proxy | target | Specific Energy Consumption |
+| Field | JSON/Python type | InfluxDB storage | Unit | ML role | Description |
+|---|---|---|---|---|---|
+| timestamp | string | point timestamp | ISO 8601 UTC | index | Measurement time |
+| ambient_temperature | float | field | C | feature | Simulated ambient temperature |
+| compressed_air_demand | float | field | m3/min | feature | Demand for compressed air |
+| pressure_setpoint | float | field | bar | feature | Required pressure level |
+| compressor_1_state | int | field | 0/1 | feature | Base compressor state |
+| compressor_2_state | int | field | 0/1 | feature | Secondary compressor state |
+| compressor_2_load_level | float | field | percent | feature | Load level of compressor 2 |
+| active_compressors_count | int | field | count | feature | Number of active compressors |
+| total_airflow | float | field | m3/min | feature | Produced airflow |
+| pressure_deviation | float | field | bar | feature | Difference between target and actual pressure |
+| SEC | float | field | kWh/m3 proxy | target | Specific Energy Consumption |
+
+Only these required telemetry fields are published to MQTT and written to
+InfluxDB. Internal simulation metadata, for example `inefficient_scenario`, is
+not part of the MQTT payload, InfluxDB point, or ML feature set.
+
+SEC is calculated as a positive simulation proxy for energy efficiency analysis.
+It is not a physically validated compressor energy model.
 
 ---
 
@@ -125,13 +147,12 @@ total_power_consumption must not be used as a feature because SEC is derived fro
 
 ---
 
-## Notes for Codex
+## Schema maintenance
 
-When implementing code, Codex must use this document as the source of truth for telemetry fields and validation rules.
+Use this document as the source of truth for telemetry fields and validation rules.
 
 Do not rename fields without updating:
 
-- AGENTS.md
 - docs/01_iot_plan.md
 - docs/03_ml_plan.md
 - code

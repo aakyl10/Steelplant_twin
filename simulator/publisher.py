@@ -8,7 +8,11 @@ import time
 from collections.abc import Iterable
 from typing import Any
 
+from dotenv import load_dotenv
+
 from simulator.generator import REQUIRED_TELEMETRY_FIELDS, generate_telemetry
+
+load_dotenv()
 
 MQTT_HOST = os.getenv("MQTT_HOST", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
