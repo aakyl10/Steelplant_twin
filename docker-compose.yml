@@ -1,14 +1,16 @@
-services:
+﻿services:
   mqtt:
-    image: eclipse-mosquitto:2
+    image: eclipse-mosquitto:2.0.22
     container_name: steelplant-mqtt
     command: ["mosquitto", "-c", "/mosquitto-no-auth.conf"]
+    restart: unless-stopped
     ports:
       - "1883:1883"
 
   influxdb:
-    image: influxdb:2
+    image: influxdb:2.9.0
     container_name: steelplant-influxdb
+    restart: unless-stopped
     ports:
       - "8086:8086"
     environment:
@@ -21,16 +23,23 @@ services:
     volumes:
       - influxdb_data:/var/lib/influxdb2
       - influxdb_config:/etc/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping", "--host", "http://localhost:8086"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:12.3.1
     container_name: steelplant-grafana
+    restart: unless-stopped
     ports:
       - "127.0.0.1:33000:3000"
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
-      GRAFANA_INFLUXDB_URL: ${GRAFANA_INFLUXDB_URL:-http://influxdb:8086}
+      GRAFANA_INFLUXDB_URL: ${GRAFANA_INFLUXDB_URL}
       INFLUXDB_ORG: ${INFLUXDB_ORG}
       INFLUXDB_BUCKET: ${INFLUXDB_BUCKET}
       INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
@@ -38,8 +47,15 @@ services:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     depends_on:
-      - influxdb
+      influxdb:
+        condition: service_healthy
 
 volumes:
   influxdb_data:
