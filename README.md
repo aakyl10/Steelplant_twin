@@ -135,8 +135,24 @@ http://localhost:33000
 ```
 
 Use the credentials from `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD`.
-Grafana datasource and dashboard setup is manual in this proof of concept:
-connect Grafana to InfluxDB, then create panels for the fields below.
+Grafana provisioning is included in the repository:
+
+- datasource provisioning: `grafana/provisioning/datasources/influxdb.yml`
+- dashboard provisioning: `grafana/provisioning/dashboards/dashboards.yml`
+- dashboard JSON files: `grafana/dashboards/`
+
+After `docker compose up -d`, Grafana creates the `Steelplant InfluxDB`
+datasource using the Docker-internal URL from `GRAFANA_INFLUXDB_URL`
+(`http://influxdb:8086` by default), `INFLUXDB_ORG`, `INFLUXDB_BUCKET`, and
+`INFLUXDB_TOKEN`. The repository dashboard should appear in the `Steelplant`
+folder if a JSON file is present under `grafana/dashboards/`.
+
+If the dashboard does not appear, import the JSON manually from:
+
+```text
+grafana/dashboards/steelplant_compressed_air_dashboard.json.json
+```
+
 The expected dashboard panels are:
 
 - `SEC`
