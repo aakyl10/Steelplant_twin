@@ -1,5 +1,3 @@
-"""Rule-based compressor logic for the virtual compressed-air plant."""
-
 BASE_COMPRESSOR_CAPACITY = 60.0
 SECONDARY_COMPRESSOR_CAPACITY = 40.0
 BASE_COMPRESSOR_POWER = 7.0
@@ -13,7 +11,6 @@ def calculate_compressor_2_load(
     base_capacity: float = BASE_COMPRESSOR_CAPACITY,
     secondary_capacity: float = SECONDARY_COMPRESSOR_CAPACITY,
 ) -> float:
-    """Return compressor 2 load percentage for the given demand."""
     if demand <= base_capacity:
         return 0.0
 
@@ -28,7 +25,6 @@ def calculate_sec(
     pressure_deviation: float,
     inefficient: bool = False,
 ) -> float:
-    """Calculate positive Specific Energy Consumption from airflow and load."""
     if total_airflow <= 0:
         raise ValueError("total_airflow must be positive")
     if pressure_setpoint <= 0:
@@ -50,7 +46,6 @@ def calculate_operating_point(
     pressure_deviation: float = 0.0,
     inefficient: bool = False,
 ) -> dict[str, float | int]:
-    """Calculate compressor states, airflow, and SEC for one telemetry step."""
     if compressed_air_demand <= 0:
         raise ValueError("compressed_air_demand must be positive")
 

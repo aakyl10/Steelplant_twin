@@ -1,4 +1,3 @@
-"""Telemetry generator for the virtual compressed-air plant."""
 
 from __future__ import annotations
 
@@ -32,7 +31,6 @@ REQUIRED_TELEMETRY_FIELDS = (
 
 
 def is_inefficient_period(timestamp: datetime, start_time: datetime) -> bool:
-    """Return whether the timestamp belongs to the inefficient scenario."""
     inefficient_start = start_time + timedelta(
         days=INEFFICIENT_START_DAY,
         hours=8,
@@ -42,7 +40,6 @@ def is_inefficient_period(timestamp: datetime, start_time: datetime) -> bool:
 
 
 def generate_demand(step: int) -> float:
-    """Create a smooth daily compressed-air demand pattern."""
     steps_per_day = 24 * ROWS_PER_HOUR
     day_step = step % steps_per_day
     day_fraction = day_step / steps_per_day
@@ -54,7 +51,6 @@ def generate_demand(step: int) -> float:
 
 
 def generate_ambient_temperature(step: int) -> float:
-    """Create a smooth daily ambient temperature pattern."""
     steps_per_day = 24 * ROWS_PER_HOUR
     day_fraction = (step % steps_per_day) / steps_per_day
     temperature = 22.0 + 6.0 * math.sin(2.0 * math.pi * (day_fraction - 0.35))
@@ -62,15 +58,12 @@ def generate_ambient_temperature(step: int) -> float:
 
 
 def generate_pressure_deviation(step: int, inefficient: bool) -> float:
-    """Create a small smooth pressure deviation, larger during inefficiency."""
     steps_per_day = 24 * ROWS_PER_HOUR
     day_fraction = (step % steps_per_day) / steps_per_day
     deviation = 0.08 * math.sin(2.0 * math.pi * day_fraction)
     if inefficient:
         deviation += 0.35
     return round(deviation, 3)
-
-
 def generate_telemetry(
     start_time: datetime = DEFAULT_START_TIME,
     days: int = SIMULATION_DAYS,
@@ -109,7 +102,6 @@ def generate_telemetry(
 
 
 def main() -> None:
-    """Run the generator from the command line."""
     rows = generate_telemetry()
     inefficient_rows = sum(1 for row in rows if row["inefficient_scenario"])
     summary = {

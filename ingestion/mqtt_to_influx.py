@@ -1,5 +1,3 @@
-"""MQTT subscriber that writes telemetry payloads to InfluxDB."""
-
 from __future__ import annotations
 
 import json
@@ -20,7 +18,6 @@ NUMERIC_TELEMETRY_FIELDS = tuple(
 
 
 def parse_timestamp(value: str) -> datetime:
-    """Parse an ISO 8601 timestamp from an MQTT payload."""
     timestamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if timestamp.tzinfo is None:
         return timestamp.replace(tzinfo=UTC)
@@ -28,7 +25,6 @@ def parse_timestamp(value: str) -> datetime:
 
 
 def parse_payload(payload: str | bytes) -> dict[str, Any]:
-    """Parse and validate a JSON telemetry payload."""
     if isinstance(payload, bytes):
         payload = payload.decode("utf-8")
 
@@ -41,7 +37,6 @@ def parse_payload(payload: str | bytes) -> dict[str, Any]:
 
 
 def payload_to_point(payload: dict[str, Any]) -> Point:
-    """Convert a validated telemetry payload into an InfluxDB point."""
     missing_fields = [field for field in REQUIRED_TELEMETRY_FIELDS if field not in payload]
     if missing_fields:
         raise ValueError(f"missing required telemetry fields: {missing_fields}")
@@ -59,7 +54,6 @@ def payload_to_point(payload: dict[str, Any]) -> Point:
 
 
 def create_mqtt_client() -> Any:
-    """Create a paho-mqtt client while supporting paho 1.x and 2.x."""
     import paho.mqtt.client as mqtt
 
     try:
@@ -74,7 +68,6 @@ def write_payload_to_influx(
     bucket: str,
     org: str,
 ) -> Point:
-    """Parse one MQTT payload and write it to InfluxDB."""
     data = parse_payload(payload)
     point = payload_to_point(data)
     write_api.write(bucket=bucket, org=org, record=point)
@@ -87,7 +80,6 @@ def handle_message_payload(
     bucket: str,
     org: str,
 ) -> Point | None:
-    """Write one MQTT payload, rejecting malformed telemetry without stopping."""
     try:
         return write_payload_to_influx(
             payload,
@@ -101,7 +93,6 @@ def handle_message_payload(
 
 
 def build_on_message(write_api: Any, bucket: str, org: str):
-    """Create an MQTT message callback that writes payloads to InfluxDB."""
 
     def on_message(_client: Any, _userdata: Any, message: Any) -> None:
         handle_message_payload(
@@ -115,7 +106,6 @@ def build_on_message(write_api: Any, bucket: str, org: str):
 
 
 def run_ingestion() -> None:
-    """Subscribe to MQTT telemetry and write messages to InfluxDB."""
     load_dotenv()
 
     influx_url = os.getenv("INFLUXDB_URL", "http://localhost:8086")
@@ -148,7 +138,6 @@ def run_ingestion() -> None:
 
 
 def main() -> None:
-    """Run ingestion from the command line."""
     run_ingestion()
 
 

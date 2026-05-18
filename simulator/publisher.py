@@ -1,5 +1,3 @@
-"""MQTT publisher for generated compressed-air telemetry."""
-
 from __future__ import annotations
 
 import json
@@ -20,7 +18,6 @@ MQTT_TOPIC = os.getenv("MQTT_TOPIC", "steelplant/compressed_air/telemetry")
 
 
 def build_payload(row: dict[str, Any]) -> str:
-    """Build a JSON MQTT payload using only required telemetry fields."""
     missing_fields = [field for field in REQUIRED_TELEMETRY_FIELDS if field not in row]
     if missing_fields:
         raise ValueError(f"missing required telemetry fields: {missing_fields}")
@@ -30,7 +27,6 @@ def build_payload(row: dict[str, Any]) -> str:
 
 
 def create_mqtt_client() -> Any:
-    """Create a paho-mqtt client while supporting paho 1.x and 2.x."""
     import paho.mqtt.client as mqtt
 
     try:
@@ -47,7 +43,6 @@ def publish_telemetry(
     delay_seconds: float = 0.0,
     client: Any | None = None,
 ) -> int:
-    """Publish telemetry rows as JSON MQTT messages."""
     telemetry_rows = generate_telemetry() if rows is None else rows
     mqtt_client = create_mqtt_client() if client is None else client
     published_count = 0
@@ -72,7 +67,6 @@ def publish_telemetry(
 
 
 def main() -> None:
-    """Run the MQTT publisher from the command line."""
     published_count = publish_telemetry()
     print(f"Published {published_count} telemetry messages to {MQTT_TOPIC}")
 

@@ -1,0 +1,16 @@
+apiVersion: 1
+
+datasources:
+  - name: Steelplant InfluxDB
+    uid: steelplant-influxdb
+    type: influxdb
+    access: proxy
+    url: ${GRAFANA_INFLUXDB_URL}
+    isDefault: true
+    editable: true
+    jsonData:
+      version: Flux
+      organization: ${INFLUXDB_ORG}
+      defaultBucket: ${INFLUXDB_BUCKET}
+    secureJsonData:
+      token: ${INFLUXDB_TOKEN}

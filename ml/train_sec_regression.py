@@ -1,5 +1,3 @@
-"""Proof-of-concept SEC regression pipeline."""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -15,6 +13,7 @@ from simulator.generator import EXPECTED_ROW_COUNT, generate_telemetry
 
 matplotlib.use("Agg")
 
+from matplotlib import dates as mdates  # noqa: E402
 from matplotlib import pyplot as plt  # noqa: E402
 
 TARGET_COLUMN = "SEC"
@@ -48,7 +47,6 @@ FEATURE_IMPORTANCE_PATH = ML_OUTPUT_DIR / "feature_importance.png"
 
 
 def load_contract_fields(path: Path = DATA_CONTRACT_PATH) -> list[str]:
-    """Read telemetry field names from the data contract table."""
     fields = []
     in_fields_table = False
 
@@ -74,7 +72,6 @@ def load_contract_fields(path: Path = DATA_CONTRACT_PATH) -> list[str]:
 
 
 def validate_columns_against_contract() -> None:
-    """Ensure ML columns use exact field names from the data contract."""
     contract_fields = set(load_contract_fields())
     required_columns = set(ML_DATASET_COLUMNS)
     missing_from_contract = sorted(required_columns - contract_fields)
@@ -83,7 +80,6 @@ def validate_columns_against_contract() -> None:
 
 
 def build_ml_dataset() -> pd.DataFrame:
-    """Generate the telemetry dataset and select ML columns."""
     validate_columns_against_contract()
     telemetry = pd.DataFrame(generate_telemetry())
     dataset = telemetry.loc[:, ML_DATASET_COLUMNS].copy()
@@ -92,7 +88,6 @@ def build_ml_dataset() -> pd.DataFrame:
 
 
 def validate_ml_dataset(dataset: pd.DataFrame) -> None:
-    """Validate row count, feature safety, and compressor-state consistency."""
     missing_columns = [column for column in ML_DATASET_COLUMNS if column not in dataset]
     if missing_columns:
         raise ValueError(f"missing ML dataset columns: {missing_columns}")
@@ -136,7 +131,6 @@ def chronological_split(
     dataset: pd.DataFrame,
     train_fraction: float = 0.8,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
-    """Split first 80% as train and last 20% as test."""
     split_index = int(len(dataset) * train_fraction)
     train = dataset.iloc[:split_index]
     test = dataset.iloc[split_index:]
@@ -149,7 +143,6 @@ def chronological_split(
 
 
 def calculate_metrics(y_true: pd.Series, y_pred: np.ndarray) -> dict[str, float]:
-    """Calculate regression metrics."""
     return {
         "MAE": mean_absolute_error(y_true, y_pred),
         "RMSE": float(np.sqrt(mean_squared_error(y_true, y_pred))),
@@ -161,7 +154,6 @@ def train_models(
     x_train: pd.DataFrame,
     y_train: pd.Series,
 ) -> dict[str, LinearRegression | RandomForestRegressor]:
-    """Train baseline and main regression models."""
     models: dict[str, LinearRegression | RandomForestRegressor] = {
         "Linear Regression": LinearRegression(),
         "Random Forest": RandomForestRegressor(
@@ -177,38 +169,48 @@ def train_models(
 
 
 def save_actual_vs_predicted_plot(predictions: pd.DataFrame) -> None:
-    """Save actual vs predicted SEC plot for both models."""
-    plt.figure(figsize=(10, 5))
-    plt.plot(
-        predictions["timestamp"],
+    plot_data = predictions.copy()
+    plot_data["timestamp"] = pd.to_datetime(plot_data["timestamp"], utc=True)
+
+    fig, ax = plt.subplots(figsize=(12, 5.5))
+    ax.plot(
+        plot_data["timestamp"],
         predictions["actual_SEC"],
         label="Actual SEC",
         linewidth=2,
+        color="#1f77b4",
     )
-    plt.plot(
-        predictions["timestamp"],
+    ax.plot(
+        plot_data["timestamp"],
         predictions["linear_regression_predicted_SEC"],
         label="Linear Regression",
         alpha=0.8,
+        color="#ff7f0e",
     )
-    plt.plot(
-        predictions["timestamp"],
+    ax.plot(
+        plot_data["timestamp"],
         predictions["random_forest_predicted_SEC"],
         label="Random Forest",
         alpha=0.8,
+        color="#2ca02c",
     )
-    step = max(len(predictions) // 6, 1)
-    plt.xticks(predictions["timestamp"].iloc[::step], rotation=30, ha="right")
-    plt.ylabel("SEC")
-    plt.title("Actual vs Predicted SEC")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(ACTUAL_VS_PREDICTED_PATH, dpi=150)
+
+    locator = mdates.DayLocator(interval=1)
+    ax.xaxis.set_major_locator(locator)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
+    ax.set_xlim(plot_data["timestamp"].min(), plot_data["timestamp"].max())
+    ax.set_xlabel("Chronological test period (UTC)")
+    ax.set_ylabel("SEC")
+    ax.set_title("Actual vs Predicted SEC")
+    ax.grid(True, alpha=0.25)
+    ax.legend()
+    fig.autofmt_xdate(rotation=0)
+    fig.tight_layout()
+    fig.savefig(ACTUAL_VS_PREDICTED_PATH, dpi=150)
     plt.close()
 
 
 def save_feature_importance_plot(model: RandomForestRegressor) -> None:
-    """Save Random Forest feature importance plot."""
     importances = pd.Series(model.feature_importances_, index=FEATURE_COLUMNS)
     importances = importances.sort_values()
 
@@ -266,10 +268,23 @@ def run_pipeline() -> tuple[pd.DataFrame, pd.DataFrame]:
 
 
 def main() -> None:
-    """Run the SEC regression pipeline from the command line."""
     metrics, _predictions = run_pipeline()
-    print("Saved ML dataset and model outputs.")
-    print(metrics.to_string(index=False))
+    print("\nSaved ML dataset and model outputs.")
+    print("ML evidence summary: synthetic telemetry, chronological holdout split")
+    print(
+        metrics.to_string(
+            index=False,
+            formatters={
+                "MAE": "{:.8f}".format,
+                "RMSE": "{:.8f}".format,
+                "R2": "{:.4f}".format,
+            },
+        )
+    )
+    print(
+        "\nArtifacts: data/processed/ml_dataset.csv, docs/ml/metrics.csv, "
+        "docs/ml/predictions.csv, docs/ml/*.png"
+    )
 
 
 if __name__ == "__main__":
