@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
 .venv/
 venv/
 
@@ -20,8 +21,13 @@ reports/*.json
 reports/*.joblib
 
 # Temporary files
+*.log
 *.tmp
 *.bak
+*.zip
+
+# Local development artifacts
+.agents/
 
 # IDE
 .idea/
