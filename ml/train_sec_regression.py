@@ -13,6 +13,7 @@ from simulator.generator import EXPECTED_ROW_COUNT, generate_telemetry
 
 matplotlib.use("Agg")
 
+from matplotlib import dates as mdates  # noqa: E402
 from matplotlib import pyplot as plt  # noqa: E402
 
 TARGET_COLUMN = "SEC"
@@ -168,32 +169,44 @@ def train_models(
 
 
 def save_actual_vs_predicted_plot(predictions: pd.DataFrame) -> None:
-    plt.figure(figsize=(10, 5))
-    plt.plot(
-        predictions["timestamp"],
+    plot_data = predictions.copy()
+    plot_data["timestamp"] = pd.to_datetime(plot_data["timestamp"], utc=True)
+
+    fig, ax = plt.subplots(figsize=(12, 5.5))
+    ax.plot(
+        plot_data["timestamp"],
         predictions["actual_SEC"],
         label="Actual SEC",
         linewidth=2,
+        color="#1f77b4",
     )
-    plt.plot(
-        predictions["timestamp"],
+    ax.plot(
+        plot_data["timestamp"],
         predictions["linear_regression_predicted_SEC"],
         label="Linear Regression",
         alpha=0.8,
+        color="#ff7f0e",
     )
-    plt.plot(
-        predictions["timestamp"],
+    ax.plot(
+        plot_data["timestamp"],
         predictions["random_forest_predicted_SEC"],
         label="Random Forest",
         alpha=0.8,
+        color="#2ca02c",
     )
-    step = max(len(predictions) // 6, 1)
-    plt.xticks(predictions["timestamp"].iloc[::step], rotation=30, ha="right")
-    plt.ylabel("SEC")
-    plt.title("Actual vs Predicted SEC")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(ACTUAL_VS_PREDICTED_PATH, dpi=150)
+
+    locator = mdates.DayLocator(interval=1)
+    ax.xaxis.set_major_locator(locator)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
+    ax.set_xlim(plot_data["timestamp"].min(), plot_data["timestamp"].max())
+    ax.set_xlabel("Chronological test period (UTC)")
+    ax.set_ylabel("SEC")
+    ax.set_title("Actual vs Predicted SEC")
+    ax.grid(True, alpha=0.25)
+    ax.legend()
+    fig.autofmt_xdate(rotation=0)
+    fig.tight_layout()
+    fig.savefig(ACTUAL_VS_PREDICTED_PATH, dpi=150)
     plt.close()
 
 
@@ -256,8 +269,22 @@ def run_pipeline() -> tuple[pd.DataFrame, pd.DataFrame]:
 
 def main() -> None:
     metrics, _predictions = run_pipeline()
-    print("Saved ML dataset and model outputs.")
-    print(metrics.to_string(index=False))
+    print("\nSaved ML dataset and model outputs.")
+    print("ML evidence summary: synthetic telemetry, chronological holdout split")
+    print(
+        metrics.to_string(
+            index=False,
+            formatters={
+                "MAE": "{:.8f}".format,
+                "RMSE": "{:.8f}".format,
+                "R2": "{:.4f}".format,
+            },
+        )
+    )
+    print(
+        "\nArtifacts: data/processed/ml_dataset.csv, docs/ml/metrics.csv, "
+        "docs/ml/predictions.csv, docs/ml/*.png"
+    )
 
 
 if __name__ == "__main__":
